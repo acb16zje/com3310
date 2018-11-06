@@ -1,0 +1,24 @@
+   File  Edit  Edit_Settings  Menu  Utilities  Compilers  Test  Help
+ -------------------------------------------------------------------------------
+ EDIT       SHE0020.ZEUSBANK.CNTL(ACCOUNTS) - 01.07         Columns 00001 00072
+ Command ===>                                                  Scroll ===> PAGE
+ ****** ***************************** Top of Data ******************************
+ 000100 //ACCOUNTS  EXEC PGM=ICETOOL
+ 000200 //INPUT     DD DISP=SHR,DSN=SHECICS.ZEUSBANK.ACCOUNTS
+ 000400 //TOOLMSG   DD SYSOUT=A
+ 000500 //DFSMSG    DD SYSOUT=A
+ 000510 //REPORT    DD SYSOUT=*
+ 000600 //TOOLIN    DD *
+ 000700   DISPLAY FROM(INPUT) LIST(REPORT) -
+ 000800   TITLE('LIST OF ZEUSBANK ACCOUNTS BY BRANCHES') -
+ 000810   BTITLE('SORTCODE:') BREAK(1,4,BI,E'999999',LZ) -
+ 000900   HEADER('ACCOUNT') ON(5,4,BI,E'99999999',LZ,NOST) -
+ 000910   HEADER('BALANCE') ON(9,4,FI) -
+ 000920   HEADER('OWNER') ON(13,32,CH) -
+ 001020   BTOTAL('BRANCH TOTAL:') -
+ 001030   TOTAL('GRAND TOTAL:')
+ 001100 /*
+ ****** **************************** Bottom of Data ****************************
+
+  F1=Help      F2=Split     F3=Exit      F4=Expand    F5=Rfind     F6=Rchange
+  F7=Up        F8=Down      F9=Swap     F10=Left     F11=Right    F12=Cancel
