@@ -35,7 +35,9 @@ public class CustomerForm {
 				String btsToken = bts.get_acqprocess_container("TOKEN");
 				String btsAmount = bts.get_acqprocess_container("AMOUNT");
 				
-				if (token.equals(btsToken)) {
+				if (btsToken.equals("")) {
+					msg += "<p>Can no longer respond to this AFCheck process</p>";
+				} else if (token.equals(btsToken)) {
 					msg += "<h1>Zeusbank Anti-Fraud Check - Customer Form (by SHE00" + userId + ")</h1>";
 					msg += "<p>A transaction of \u00a3" + btsAmount + " is detected. Please verify: </p>";
 					msg += "<form method='post'><table><tr>";
