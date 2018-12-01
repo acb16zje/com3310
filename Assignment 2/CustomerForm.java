@@ -22,23 +22,25 @@ public class CustomerForm {
 			
 			String processName = req.getQueryParm("proc");
 			String token = req.getQueryParm("token");
-			String userId = req.getPath().substring(req.getPath().length() - 2);
 			
 			try {
 				BTS bts = new BTS("LARGS");
 				
 				bts.acquire_process(processName, "AFCHECK");
 				
-				String msg = "<body><style>body {font-family: sans-serif; font-size: 1.5em;"
-						+ "text-align: center; margin: 0 auto} table{margin: 0 auto;}</style>";
+        String btsToken = bts.get_acqprocess_container("TOKEN");
+        String btsAmount = bts.get_acqprocess_container("AMOUNT");
 				
-				String btsToken = bts.get_acqprocess_container("TOKEN");
-				String btsAmount = bts.get_acqprocess_container("AMOUNT");
+        // HTML template
+				String body = "<body><style>body {font-family: sans-serif; font-size: 1.5em;"
+						+ "text-align: center; margin: 0 auto} table{margin: 0 auto;}</style>" 
+				    + "<h1>Zeusbank Anti-Fraud Check - Customer Form (by SHE0020)</h1>";
+				String msg = body;
 				
+				// Timeout token, same token or invalid token
 				if (btsToken.equals("")) {
 					msg += "<p>Can no longer respond to this AFCheck process</p>";
-				} else if (token.equals(btsToken)) {
-					msg += "<h1>Zeusbank Anti-Fraud Check - Customer Form (by SHE00" + userId + ")</h1>";
+				} else if (btsToken.equals(token)) {
 					msg += "<p>A transaction of \u00a3" + btsAmount + " is detected. Please verify: </p>";
 					msg += "<form method='post'><table><tr>";
 					msg += "<td><input type='radio' name='investigation' id='yes' value='yes' checked></td>";
@@ -49,6 +51,7 @@ public class CustomerForm {
 					
 					String response = req.getFormField("investigation");
 					
+					// Customer responded, run CUSTOMER_RESP event
 					if (response != null) {
 						bts.put_acqprocess_container("RESPONSE", response);
 						bts.run_acqprocess_asynchronous("CUSTOMER_RESP");
@@ -57,20 +60,19 @@ public class CustomerForm {
 					msg += "<p>Invalid token</p>";
 				}
 				
+				// Check if a response has already submitted
 				try {
 					bts.get_acqprocess_container("RESPONSE");
-					msg = "Response submitted";
+					msg = body + "<p>Response submitted</p>";
 				} catch (Exception e) {}
 				
 				doc.createText(msg);
-				resp.setMediaType("text/html");
-				resp.sendDocument(doc, (short) 200, "OK", ASCII);
 			} catch (Exception e) {
-				String errMsg = "Unable to find this AFCheck process";
-				doc.createText(errMsg);
-				resp.setMediaType("text/html");
-				resp.sendDocument(doc, (short) 200, "OK", ASCII);
+				doc.createText("Unable to find this AFCheck process");
 			}
+			
+      resp.setMediaType("text/html");
+      resp.sendDocument(doc, (short) 200, "OK", ASCII);
 		} catch (Exception e) {
 			t.out.println("she0020 CustomerForm error:");
 			e.printStackTrace(t.out);

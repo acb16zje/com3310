@@ -20,12 +20,17 @@ public class TellerForm {
 			HttpResponse resp = new HttpResponse();
 			Document doc = new Document();
 
+			// HTTP GET or POST
 			String reqType = req.getHttpMethod();
-			String processName = "";
-      String userId = req.getPath().substring(req.getPath().length() - 2);
-      String m = "<body><style>body {font-family: sans-serif; font-size: 1.5em;"
-          + "text-align: center; margin: 0 auto} table{margin: 0 auto;}</style>";
-      String msg = m + "<h1>Zeusbank Anti-Fraud Check - Teller Form (by SHE00" + userId + ")</h1>";
+			
+			// Use query process name or form field process name
+			String processName = reqType.equals("POST") ? req.getFormField("proc") : req.getQueryParm("proc");
+			
+      // HTML template
+      String body = "<body><style>body {font-family: sans-serif; font-size: 1.5em;"
+          + "text-align: center; margin: 0 auto} table{margin: 0 auto;}</style>" 
+          + "<h1>Zeusbank Anti-Fraud Check - Teller Form (by SHE0020)</h1>";
+      String msg = body;
       msg += "<p>When investigation has completed, please tick checkbox and submit</p>";
       msg += "<form method='post'><table><tr>";
       msg += "<td>AFCheck process ID: </td>";
@@ -34,25 +39,19 @@ public class TellerForm {
       msg += "<td><input type='checkbox' name='complete' value='yes'></td></tr></table>";
       msg += "<br/><input type='submit' value='Submit'></form></body>";
 			
-			if (reqType.equals("POST")) {
-			  processName = req.getFormField("proc");
-			} else {
-			  processName = req.getQueryParm("proc");
-			}
-			
 			try {
 				bts.acquire_process(processName, "AFCHECK");
 
 				String btsToken = bts.get_acqprocess_container("TOKEN");
 
 				if (btsToken.equals("")) {
-	        String process = req.getFormField("proc");
 	        String complete = req.getFormField("complete");
 	         
 	        if (reqType.equals("POST")) {
 	          if (complete == null) {
 	            msg += "<p>Please tick checkbox to submit after investigation has completed</p>";
 	          } else {
+	            // Teller responded "yes", run TELLER_RESP event
 	            if (complete.equals("yes")) {
 	              bts.put_acqprocess_container("RESPONSE", "done");
 	              bts.run_acqprocess_asynchronous("TELLER_RESP");
@@ -60,17 +59,21 @@ public class TellerForm {
 	          }
 	        }
 				} else {
-					msg += m + "<p>Customer has not yet responded or timeout has not triggered yet</p>";
+				  // Teller trying to visit when customer has not responded or timeout has not triggered yet
+					msg = body + "<p>Customer has not yet responded or timeout has not triggered yet</p>";
 				}
 
+				// Teller finished investigation, don't show the template anymore
 				try {
 					String btsResponse = bts.get_acqprocess_container("RESPONSE");
 
 					if (btsResponse.equals("done")) {
-						msg = m + "<p>Investigation complete for " + processName + "</p>";
+						msg = body + "<p>Investigation completed for " + processName + "</p>";
 					}
 				} catch (Exception e) {}
+				
 			} catch (Exception e) {
+			  // Teller submitting invalid or wrong AFCheck process ID
 			  if (reqType.equals("POST")) {
           if (processName.equals("")) {
             msg += "<p>Please enter a valid AFCheck process ID</p>";
